@@ -8,98 +8,155 @@ import (
 	"path/filepath"
 )
 
-// main window pointer, used to mainpulate gui widget
-var mainWindow *walk.MainWindow = nil
-var notifyIcon *walk.NotifyIcon = nil
-var dialog *walk.Dialog
-var TaskScrollView *walk.ScrollView = nil
-//func doProgress() {
-//	var dialog *walk.Dialog
-//	var progressBar *walk.ProgressBar
-//	err := Dialog{
-//		AssignTo: &dialog,
-//		Title:    "Progress dialog",
-//		MinSize:  Size{Width: 300, Height: 200},
-//		Layout:   VBox{},
-//		Children: []Widget{
-//			ProgressBar{AssignTo: &progressBar},
-//		},
-//	}.Create(mainWindow)
-//	if err != nil {
-//		fmt.Println(err)
-//		return
-//	}
-//	dialog.Starting().Attach(func() {
-//		go progressWorker(dialog, progressBar)
-//	})
-//	dialog.Run()
-//}
-//
-//func progressWorker(dialog *walk.Dialog, progressBar *walk.ProgressBar) {
-//	defer dialog.Synchronize(func() {
-//		dialog.Close(0)
-//	})
-//
-//	length := 10
-//	dialog.Synchronize(func() {
-//		progressBar.SetRange(0, int(length))
-//	})
-//	workWithCallback(length, func(n int64) {
-//		fmt.Println("progress", n)
-//		dialog.Synchronize(func() {
-//			progressBar.SetValue(int(n))
-//		})
-//	})
-//}
-//
-//func workWithCallback(length int, callback func(int64)) {
-//	for i := 1; i <= length; i++ {
-//		time.Sleep(time.Second)
-//		callback(int64(i))
-//	}
-//}
+var mmw	*MyMainWindow
 
-// init main window
-func init() {
-	fmt.Println("init main window")
+type MyMainWindow struct {
+	*walk.MainWindow
+
+	NotifyIcon				*walk.NotifyIcon
+
+	ActiveTaskScrollView 	*walk.ScrollView
+	SucceedTaskScrollView 	*walk.ScrollView
+	FailedTaskScrollView  	*walk.ScrollView
+
+	ActiveTaskScrollEmpty 	*walk.Composite
+	SucceedTaskScrollEmpty 	*walk.Composite
+	FailedTaskScrollEmpty  	*walk.Composite
+}
+
+
+func InitMainWindow() {
 	err := MainWindow{
-		AssignTo: &mainWindow,
-		Title:    "Hidden Main Window",
-		MinSize:  Size{Width: 1, Height: 1},
-		Visible: false,
+		Icon: ImageResourcePath("upload.ico"),
+		AssignTo: 	&mmw.MainWindow,
+		Title:    	"上传任务列表",
+		MinSize:  	Size{Width: 600, Height: 600},
+		MaxSize: 	Size{Width: 600, Height: 1000},
+		Visible: 	true,
+		Layout: 	VBox{},
+		Children: []Widget{
+			TabWidget{
+				Font: Font{Bold: false, PointSize: 12, Family:  "Microsoft YaHei"},
+				Pages: []TabPage{
+					{
+						Title: "  进行中  ",
+						Content: Composite{
+							Layout: Grid{Columns: 1},
+							Children: []Widget{
+								Composite{
+									AssignTo: &mmw.ActiveTaskScrollEmpty,
+									Visible: true,
+									Layout: VBox{},
+									Children: []Widget{
+										ImageView{
+											MaxSize: Size{Height: 100, Width: 100},
+											Mode: ImageViewModeShrink,
+											Alignment: AlignHCenterVCenter,
+											Image: ImageResourcePath("empty.png"),
+										},
+									},
+								},
+								ScrollView {
+									Layout: VBox{MarginsZero: true},
+									VerticalFixed: false,
+									AssignTo: &mmw.ActiveTaskScrollView,
+									Children: []Widget{},
+								},
+							},
+						},
+					}, {
+						Title: "  已完成  ",
+						Content: Composite{
+							Layout: Grid{Columns: 1},
+							Children: []Widget{
+								Composite{
+									AssignTo: &mmw.SucceedTaskScrollEmpty,
+									Visible: true,
+									Layout: VBox{},
+									Children: []Widget{
+										ImageView{
+											MaxSize: Size{Height: 100, Width: 100},
+											Mode: ImageViewModeShrink,
+											Alignment: AlignHCenterVCenter,
+											Image: ImageResourcePath("empty.png"),
+										},
+									},
+								},
+								ScrollView {
+									Layout: VBox{MarginsZero: true},
+									VerticalFixed: false,
+									AssignTo: &mmw.SucceedTaskScrollView,
+									Children: []Widget{},
+								},
+							},
+						},
+					}, {
+						Title: "  已失败  ",
+						Content: Composite{
+							Layout: Grid{Columns: 1},
+							Children: []Widget{
+								Composite{
+									AssignTo: &mmw.FailedTaskScrollEmpty,
+									Visible: true,
+									MaxSize: Size{Height: 150},
+									Layout: VBox{},
+									Children: []Widget{
+										ImageView{
+											MaxSize: Size{Height: 100, Width: 100},
+											Mode: ImageViewModeShrink,
+											Alignment: AlignHCenterVCenter,
+											Image: ImageResourcePath("empty.png"),
+										},
+									},
+								},
+								ScrollView {
+									Layout: VBox{MarginsZero: true},
+									VerticalFixed: false,
+									AssignTo: &mmw.FailedTaskScrollView,
+									Children: []Widget{},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}.Create()
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	// prevent from exit
+	mmw.MainWindow.Closing().Attach(func(canceled *bool, reason walk.CloseReason){
+		mmw.MainWindow.SetVisible(false)
+		*canceled = true
+	})
 }
 
-// init notify icon
-func init() {
-	fmt.Println("init notify icon")
-
+func InitNotifyIcon() {
 	// We load our icon from a file.
-	icon, err := walk.Resources.Icon(filepath.Join("img","stop.ico"))
+	icon, err := walk.Resources.Icon(filepath.Join("img","upload.ico"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Create the notify icon and make sure we clean it up on exit.
-	notifyIcon, err = walk.NewNotifyIcon(mainWindow)
+	mmw.NotifyIcon, err = walk.NewNotifyIcon(mmw.MainWindow)
 	if err != nil {
 		log.Fatal(err)
 	}
 	//defer ni.Dispose()
 
 	// Set the icon and a tool tip text.
-	if err := notifyIcon.SetIcon(icon); err != nil {
+	if err := mmw.NotifyIcon.SetIcon(icon); err != nil {
 		log.Fatal(err)
 	}
-	if err := notifyIcon.SetToolTip("本地上传器"); err != nil {
+	if err := mmw.NotifyIcon.SetToolTip("本地上传器"); err != nil {
 		log.Fatal(err)
 	}
 
 	// When the left mouse button is pressed, bring up our balloon.
-	notifyIcon.MouseDown().Attach(func(x, y int, button walk.MouseButton) {
+	mmw.NotifyIcon.MouseDown().Attach(func(x, y int, button walk.MouseButton) {
 		if button != walk.LeftButton {
 			return
 		}
@@ -119,226 +176,68 @@ func init() {
 
 		fmt.Println("click icon")
 
-		dialog.Show()
+		mmw.MainWindow.Show()
+		_ = mmw.MainWindow.SetFocus()
 	})
 
 	// We put an exit action into the context menu.
 	exitAction := walk.NewAction()
-	if err := exitAction.SetText("E&xit"); err != nil {
+	if err := exitAction.SetText("退出"); err != nil {
 		log.Fatal(err)
 	}
 	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
-	if err := notifyIcon.ContextMenu().Actions().Add(exitAction); err != nil {
+	if err := mmw.NotifyIcon.ContextMenu().Actions().Add(exitAction); err != nil {
 		log.Fatal(err)
 	}
 
 	// The notify icon is hidden initially, so we have to make it visible.
-	if err := notifyIcon.SetVisible(true); err != nil {
+	if err := mmw.NotifyIcon.SetVisible(true); err != nil {
 		log.Fatal(err)
 	}
 
 	// Now that the icon is visible, we can bring up an info balloon.
-	if err := notifyIcon.ShowInfo("本地上传器已启动", "点击查看所有任务列表"); err != nil {
+	if err := mmw.NotifyIcon.ShowInfo("本地上传器已启动", "点击查看所有任务列表"); err != nil {
 		log.Fatal(err)
 	}
 }
 
-
-
-func initTaskStatusList() {
-	//image, err:= walk.ImageFrom(filepath.Join("img", "cancel.png"))
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-	err := Dialog{
-		AssignTo: &dialog,
-		Title:    "任务列表",
-		MinSize:  Size{Width: 500, Height: 1000},
-		MaxSize:  Size{Width: 600, Height: 1200},
-		Layout:   VBox{MarginsZero: true},
-		Children: []Widget{
-			TabWidget{
-				Font: Font{Bold:false, PointSize: 12, Family:  "Microsoft YaHei"},
-				Pages: []TabPage{
-					TabPage {
-						Title:"  进行中  ",
-						Content: ScrollView{
-							Layout: VBox{MarginsZero: true},
-							VerticalFixed: false,
-							AssignTo: &TaskScrollView,
-							Children: []Widget{
-								GroupBox{
-									Background: SystemColorBrush{Color: walk.SysColorWindow},
-									Layout:     Grid{Columns: 1},
-									Children: []Widget{
-										LinkLabel{
-											Font:     Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"},
-											Text:     `正在将 1 个项目从 <a href="">XXX</a> 复制到 <a href="">XXX</a>`,
-											OnLinkActivated: func(link *walk.LinkLabelLink) {
-												log.Printf("id: '%s', url: '%s'\n", link.Id(), link.URL())
-											},
-										},
-										Composite{
-											Layout: Grid{Columns: 4},
-											Children: []Widget{
-												TextLabel{
-													Text:     "已暂停 - 已完成40%",
-													Font: Font{
-														Bold:      false,
-														PointSize: 12,
-														Family:    "Microsoft YaHei",
-													},
-												},
-												TextLabel{Text: "            "},
-												ToolButton{Text: "►",  Background: SystemColorBrush{Color: walk.SysColorWindow}},
-												ToolButton{Text: "✖", Background: SystemColorBrush{Color: walk.SysColorBtnHighlight}},
-											},
-										},
-										ProgressBar{MinValue: 0, MaxValue: 100, Value: 30, Name: "www", MarqueeMode: true},
-										Composite{
-											Layout: Grid{Columns: 2},
-											Children: []Widget{
-												TextLabel{Text: "名称：QLM牛逼.7z", Font: Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"}},
-												TextLabel{Text: "速度：10MB/S", Font: Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"}},
-												TextLabel{Text: "剩余时间：11:45:14", Font: Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"}},
-												TextLabel{Text: "剩余项目：1（1145.14MB）", Font: Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"}},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-					TabPage {
-						Title: "  已完成  ",
-						Content: ScrollView{
-							Layout: VBox{MarginsZero: true},
-							VerticalFixed: false,
-							AssignTo: &TaskScrollView,
-							Children: []Widget{
-								GroupBox{
-									Background: SystemColorBrush{Color: walk.SysColorWindow},
-									Layout:     Grid{Columns: 1},
-									Children: []Widget{
-										LinkLabel{
-											Font:     Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"},
-											Text:     `正在将 1 个项目从 <a href="">XXX</a> 复制到 <a href="">XXX</a>`,
-											OnLinkActivated: func(link *walk.LinkLabelLink) {
-												log.Printf("id: '%s', url: '%s'\n", link.Id(), link.URL())
-											},
-										},
-										Composite{
-											Layout: Grid{Columns: 4},
-											Children: []Widget{
-												TextLabel{
-													Text:     "已暂停 - 已完成40%",
-													Font: Font{
-														Bold:      false,
-														PointSize: 12,
-														Family:    "Microsoft YaHei",
-													},
-												},
-												TextLabel{Text: "            "},
-												ToolButton{Text: "►",  Background: SystemColorBrush{Color: walk.SysColorWindow}},
-												ToolButton{Text: "✖", Background: SystemColorBrush{Color: walk.SysColorBtnHighlight}},
-											},
-										},
-										ProgressBar{MinValue: 0, MaxValue: 100, Value: 30, Name: "www", MarqueeMode: true},
-										Composite{
-											Layout: Grid{Columns: 2},
-											Children: []Widget{
-												TextLabel{Text: "名称：QLM牛逼.7z", Font: Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"}},
-												TextLabel{Text: "速度：10MB/S", Font: Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"}},
-												TextLabel{Text: "剩余时间：11:45:14", Font: Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"}},
-												TextLabel{Text: "剩余项目：1（1145.14MB）", Font: Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"}},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-					TabPage {
-						Title: "  已失败  ",
-						Content: ScrollView{
-							Layout: VBox{MarginsZero: true},
-							VerticalFixed: false,
-							AssignTo: &TaskScrollView,
-							Children: []Widget{
-								GroupBox{
-									Background: SystemColorBrush{Color: walk.SysColorWindow},
-									Layout:     Grid{Columns: 1},
-									Children: []Widget{
-										LinkLabel{
-											Font:     Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"},
-											Text:     `正在将 1 个项目从 <a href="">XXX</a> 复制到 <a href="">XXX</a>`,
-											OnLinkActivated: func(link *walk.LinkLabelLink) {
-												log.Printf("id: '%s', url: '%s'\n", link.Id(), link.URL())
-											},
-										},
-										Composite{
-											Layout: Grid{Columns: 4},
-											Children: []Widget{
-												TextLabel{
-													Text:     "已暂停 - 已完成40%",
-													Font: Font{
-														Bold:      false,
-														PointSize: 12,
-														Family:    "Microsoft YaHei",
-													},
-												},
-												TextLabel{Text: "            "},
-												ToolButton{Text: "►",  Background: SystemColorBrush{Color: walk.SysColorWindow}},
-												ToolButton{Text: "✖", Background: SystemColorBrush{Color: walk.SysColorBtnHighlight}},
-											},
-										},
-										ProgressBar{MinValue: 0, MaxValue: 100, Value: 30, Name: "www", MarqueeMode: true},
-										Composite{
-											Layout: Grid{Columns: 2},
-											Children: []Widget{
-												TextLabel{Text: "名称：QLM牛逼.7z", Font: Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"}},
-												TextLabel{Text: "速度：10MB/S", Font: Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"}},
-												TextLabel{Text: "剩余时间：11:45:14", Font: Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"}},
-												TextLabel{Text: "剩余项目：1（1145.14MB）", Font: Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"}},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Visible: true,
-	}.Create(mainWindow)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("create dialog")
-
-	// disable close event
-	dialog.Closing().Attach(func(canceled *bool, reason walk.CloseReason){
-		dialog.SetVisible(false)
-		*canceled = true
-	})
-
-
-	//dialog.Run()
+func InitWindow()  {
+	mmw = new(MyMainWindow)
+	InitMainWindow()
+	InitNotifyIcon()
 }
 
-
-func StartMainWindow() {
-	fmt.Println("start to Run Loop")
-	//defer ni.Dispose()
-
-
-	initTaskStatusList()
-
-	fmt.Println("run main window")
-	mainWindow.Run()
-
-	fmt.Println("exit")
-
+func Refresh() {
+	_ = mmw.MainWindow.SetSize(mmw.Size())
 }
+
+//func LoadCompleted() bool {
+//	if mmw == nil {
+//		return false
+//	}
+//	if mmw.MainWindow == nil {
+//		return false
+//	}
+//	if mmw.NotifyIcon == nil || mmw.FailedTaskScrollView == nil || mmw.SucceedTaskScrollView == nil || mmw.ActiveTaskScrollView == nil {
+//		return false
+//	}
+//	return true
+//}
+
+func GetMyMainWindow() *MyMainWindow {
+	return mmw
+}
+
+var (
+	AbortTaskIDChan   chan string
+	ResumeTaskIDChan  chan string
+	SuspendTaskIDChan chan string
+)
+
+func StartMainWindow(suspendChan chan string, resumeChan chan string, abortChan chan string) {
+	SuspendTaskIDChan = suspendChan
+	ResumeTaskIDChan = resumeChan
+	AbortTaskIDChan = abortChan
+	mmw.Run()
+}
+

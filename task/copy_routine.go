@@ -7,28 +7,31 @@ import (
 	"path/filepath"
 )
 
+/**
+	FileCopyTask do file copy
+ */
 type FileCopyTask struct {
+
+	Signal 						*RoutineSignal
+
 	// static
 	SourcePath					string
 	TargetPath					string
 	IsDir						bool
 	UploadTaskRef    			*UploadTask
 
-	// dynamic
+	// dynamic fields
 	ItemsCopied					int64
 	BytesCopied					int64
 	CurrentCopyItemPath			string
 
+	// events
 	OnItemsCopiedChanged		func(int64)
 	OnBytesCopiedChanged		func(int64)
 	OnCurrentCopyItemChanged	func(string)
-	OnCompleted					func()
-	OnFailed					func(error)
+	OnExit						func(error)
 }
 
-/**
-	fileCopy routine supports abort, suspend and resume action
- */
 func (copyTask *FileCopyTask) Start(async bool) {
 	if async {
 		go func() {
@@ -40,11 +43,11 @@ func (copyTask *FileCopyTask) Start(async bool) {
 }
 
 func (copyTask *FileCopyTask) BlockStart() {
+	var err error = nil
+
 	if copyTask.IsDir {
-		if err := copyTask.CopyFolder(copyTask.SourcePath, copyTask.TargetPath); err != nil {
-			copyTask.OnFailed(err)
-			return
-		}
+		err = copyTask.CopyFolder(copyTask.SourcePath, copyTask.TargetPath)
+
 	} else {
 		_, filename := filepath.Split(copyTask.SourcePath)
 		finalTargetPath := filepath.Join(copyTask.TargetPath, filename)
@@ -52,16 +55,15 @@ func (copyTask *FileCopyTask) BlockStart() {
 		copyTask.CurrentCopyItemPath = finalTargetPath
 		copyTask.OnCurrentCopyItemChanged(finalTargetPath)
 
-		if _, err := copyTask.CopyFile(copyTask.SourcePath, finalTargetPath); err != nil {
-			copyTask.OnFailed(err)
-			return
-		}
+		_, err = copyTask.CopyFile(copyTask.SourcePath, finalTargetPath)
 
-		copyTask.ItemsCopied = 1
-		copyTask.OnItemsCopiedChanged(1)
+		if err == nil {
+			copyTask.ItemsCopied = 1
+			copyTask.OnItemsCopiedChanged(1)
+		}
 	}
 
-	copyTask.OnCompleted()
+	copyTask.OnExit(err)
 }
 
 func (copyTask *FileCopyTask) CopyFolder(source string, dest string) (err error) {
@@ -87,13 +89,13 @@ func (copyTask *FileCopyTask) CopyFolder(source string, dest string) (err error)
 			copyTask.CurrentCopyItemPath = sourceFilePointer
 			copyTask.OnCurrentCopyItemChanged(copyTask.CurrentCopyItemPath)
 
-			_ , err := copyTask.CopyFile(sourceFilePointer, destinationFilePointer)
-
-			copyTask.ItemsCopied ++
-			copyTask.OnItemsCopiedChanged(copyTask.ItemsCopied)
+			_ , err = copyTask.CopyFile(sourceFilePointer, destinationFilePointer)
 
 			if err != nil {
 				return err
+			} else {
+				copyTask.ItemsCopied ++
+				copyTask.OnItemsCopiedChanged(copyTask.ItemsCopied)
 			}
 		}
 	}
@@ -186,21 +188,9 @@ func (copyTask *FileCopyTask) copyBuffer(dst Writer, src Reader) (written int64,
 	buf = make([]byte, size)
 	for {
 
-
-		// check action
-		select {
-		case _ = <- copyTask.UploadTaskRef.RuntimeChannel.AbortChan:
-			log.Println("FileCopyRoutine Receive Abort Signal, Ready To Return")
-			return 0,errors.New("abort signal found")
-		case _ = <- copyTask.UploadTaskRef.RuntimeChannel.SuspendChan:
-			log.Println("suspend, block copyBuffer")
-			select {
-			case _ = <- copyTask.UploadTaskRef.RuntimeChannel.ResumeChan:
-			case _ = <- copyTask.UploadTaskRef.RuntimeChannel.AbortChan:
-				return 0, errors.New("abort signal found")
-			}
-			log.Println("resume, recover copyBuffer")
-		default:
+		if abort := copyTask.Signal.CheckSignal(); abort {
+			log.Println("FileCopyTask received exit signal, return")
+			return 0, AbortError
 		}
 
 		nr, er := src.Read(buf)

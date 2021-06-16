@@ -2,11 +2,14 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var dbPath = ".\\data.db"
+
 func LoadInactiveUploadTasksFromDB(status UploadTaskRecordStatus) ([]*UploadTaskRecord, error) {
-	db, err := sql.Open("sqlite3", "C:\\Users\\A\\Desktop\\uploader\\bin\\data.db")
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, err
 	}
@@ -68,4 +71,86 @@ func LoadInactiveUploadTasksFromDB(status UploadTaskRecordStatus) ([]*UploadTask
 	}
 
 	return uploadTaskList, nil
+}
+
+
+func DeleteTaskRecord(taskId string) error {
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	if _, err = db.Exec("UPDATE upload SET deleted = 1 WHERE id = ?", taskId); err != nil {
+		return err
+	}
+
+	return  nil
+}
+
+
+func CreateTaskRecord(record UploadTaskRecord) error {
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	if _, err := db.Exec("INSERT INTO upload " +
+		"(id, status, local_path, target_path, is_dir, bytes_copied, bytes_total_calculated, bytes_total, items_copied, items_total_calculated, items_total, start_time, finish_time, error_msg, deleted) " +
+		"VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+		record.TaskId, record.Status, record.LocalPath, record.TargetPath, Bool2Int(record.IsDir),
+		record.BytesCopied, Bool2Int(record.BytesCalculated), record.BytesTotal,
+		record.ItemsCopied, Bool2Int(record.ItemsCalculated), record.ItemsTotal,
+		record.StartTime, record.FinishTime, record.ErrorMessage, 0); err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}
+
+func UpdateTaskRecord(record UploadTaskRecord) error {
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	if _, err := db.Exec("UPDATE upload SET " +
+		"status = ?, local_path = ?, target_path = ?, is_dir = ?," +
+		"bytes_copied = ?, bytes_total_calculated = ?, bytes_total = ?," +
+		"items_copied = ?, items_total_calculated = ?, items_total = ?, " +
+		"start_time = ?, finish_time = ?, error_msg = ? " +
+		"WHERE id = ?",
+		record.Status, record.LocalPath, record.TargetPath, Bool2Int(record.IsDir),
+		record.BytesCopied, Bool2Int(record.BytesCalculated), record.BytesTotal,
+		record.ItemsCopied, Bool2Int(record.ItemsCalculated), record.ItemsTotal,
+		record.StartTime, record.FinishTime, record.ErrorMessage, record.TaskId); err != nil {
+		return err
+	}
+	return nil
+}
+
+// set all active task to failed
+func ResolveUnfinishedActiveTasksStatus() error {
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	if _, err := db.Exec("UPDATE upload SET status = ?, error_msg = ? WHERE status = ?", Failed, "已取消", Active); err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}
+
+
+func Bool2Int(v bool) int {
+	if v {
+		return 1
+	} else {
+		return 0
+	}
 }

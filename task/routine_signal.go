@@ -22,15 +22,15 @@ func NewRoutineSignal() *RoutineSignal {
 	}
 }
 
-func (routine *RoutineSignal) Suspend() {
+func (routine *RoutineSignal) SendSuspendSignal() {
 	routine.SuspendChan <- true
 }
 
-func (routine *RoutineSignal) Resume() {
+func (routine *RoutineSignal) SendResumeSignal() {
 	routine.ResumeChan <- true
 }
 
-func (routine *RoutineSignal) Abort() {
+func (routine *RoutineSignal) SendAbortSignal() {
 	routine.AbortChan <- true
 }
 
@@ -54,4 +54,10 @@ func (routine *RoutineSignal) CheckSignal() (abort bool){
 		return false
 	}
 	return false
+}
+
+func (routine *RoutineSignal) Close() {
+	close(routine.SuspendChan)
+	close(routine.ResumeChan)
+	close(routine.AbortChan)
 }

@@ -1,31 +1,31 @@
 package task
 
 import (
-	"errors"
 	"log"
 	"os"
 	"path/filepath"
 )
 
+/**
+	FileStatisticTask statistic total items and size
+ */
 type FileStatisticTask struct {
-	// statistic
+	Signal 						*RoutineSignal
+
+	// statistic fields
 	SourcePath					string
 	IsDir						bool
-	UploadTaskRef				*UploadTask
 
-	// dynamic
+	// dynamic fields
 	ItemsFound					int64
 	BytesCount					int64
 
-	OnItemsFoundChanged		func(int64)
-	OnBytesCountChanged		func(int64)
-	OnCompleted				func(int64, int64)
-	OnFailed				func(err error)
+	// events
+	OnItemsFoundChanged			func(int64)
+	OnBytesCountChanged			func(int64)
+	OnExit						func(err error, size int64, item int64)
 }
 
-/*
-	statistic routine only support abort action
- */
 
 func (statisticTask *FileStatisticTask) Start(async bool) {
 	if async {
@@ -39,50 +39,38 @@ func (statisticTask *FileStatisticTask) Start(async bool) {
 
 
 func (statisticTask *FileStatisticTask)	BlockStart()  {
+	var err error = nil
 	if statisticTask.IsDir {
-		_ , err := statisticTask.CalDirSize(statisticTask.SourcePath)
-		if err != nil {
-			statisticTask.OnFailed(err)
-			return
-		}
+		// size and items update is included in statisticTask.CalDirSize()
+		_ , err = statisticTask.CalDirSize(statisticTask.SourcePath)
+
 	} else {
+		// single file size calculate can be done in O(1)
 		statisticTask.ItemsFound = 1
 		statisticTask.OnItemsFoundChanged(1)
 
-		size, err := calFileSize(statisticTask.SourcePath)
-		if err != nil {
-			statisticTask.OnFailed(err)
-			return
-		}
+		var size int64 = 0
+		size, err = calFileSize(statisticTask.SourcePath)
 		statisticTask.BytesCount = size
 		statisticTask.OnBytesCountChanged(size)
 	}
 
-	statisticTask.UploadTaskRef.BytesTotal = statisticTask.BytesCount
-	statisticTask.UploadTaskRef.ItemsTotal = statisticTask.ItemsFound
-	statisticTask.UploadTaskRef.BytesCalculated = true
-	statisticTask.UploadTaskRef.ItemsCalculated = true
-
-	statisticTask.OnCompleted(statisticTask.ItemsFound, statisticTask.BytesCount)
+	statisticTask.OnExit(err, statisticTask.BytesCount, statisticTask.ItemsFound)
 }
 
 
 func (statisticTask *FileStatisticTask) CalDirSize(path string) (int64, error) {
 	var size int64
 	var count int64 = 0
+	signal := statisticTask.Signal
+
 	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
 
-		// check action
-		select {
-		case _ = <-statisticTask.UploadTaskRef.RuntimeChannel.AbortChan:
-			log.Println("FileStatisticRoutine Receive Abort Signal, Ready To Return")
-			return errors.New("abort signal found")
-		default:
+		if abort := signal.CheckSignal(); abort {
+			log.Println("FileStatisticTask received exit signal, return")
+			return AbortError
 		}
 
-		if err != nil {
-			return err
-		}
 		if !info.IsDir() {
 			size += info.Size()
 			count += 1

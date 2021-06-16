@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -51,3 +52,16 @@ func DirPath(path string) string {
 	}
 }
 
+func FileSizeFromBytes(nBytes int64) string {
+	if nBytes < 1024 {
+		return fmt.Sprintf("%vB", nBytes)
+	} else if nBytes < 1024*1024 {
+		return fmt.Sprintf("%vKB", nBytes / 1024)
+	} else if nBytes < 1024*1024*1024 {
+		return fmt.Sprintf("%vMB", nBytes / (1024 * 1024))
+	} else if nBytes < 1024*1024*1024*1024 {
+		return fmt.Sprintf("%vGB", nBytes / (1024 * 1024 * 1024))
+	} else {
+		return fmt.Sprintf("%vTB", nBytes / (1024 * 1024 * 1024 * 1024))
+	}
+}
