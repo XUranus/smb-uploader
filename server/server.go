@@ -2,13 +2,6 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	"log"
-	"net/http"
-	"strconv"
-	"time"
-	"uploader/db"
-	"uploader/gui"
-	"uploader/task"
 )
 
 
@@ -31,91 +24,23 @@ func StartServer(url string, async bool) {
 func StartServerBlock(url string) {
 	r := gin.Default()
 
-	r.POST("/new", func(c *gin.Context) {
-		request := &NewUploadTaskRequest{}
-		err := c.BindJSON(request)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"ok": false,
-				"msg": err,
-			})
-		} else {
-			localPath, ok, err := gui.SelectedPath(request.IsDir, request.FileFilter)
-			if err != nil {
-				log.Fatal(err)
-			} else {
-				if ok {
-					if request.TaskID == "" {
-						request.TaskID = strconv.FormatInt(time.Now().Unix(), 10)
-					}
-					t := task.NewUploadTask(request.TaskID, localPath, request.TargetPath, request.IsDir)
-					_ = db.CreateTaskRecord(task.UploadTaskToUploadTaskRecord(t))
-					t.Start()
+	// create a new upload task from HTTP Request
+	r.POST("/new", NewTask)
 
-				} else {
-					log.Println("file selection canceled")
-				}
-			}
+	// judge whether program is running
+	r.GET("/live", IsAlive)
 
-			c.JSON(http.StatusOK, gin.H{
-				"ok": true,
-			})
-		}
-	})
+	// abort a running task
+	r.POST("/abort", AbortTask)
 
+	//TODO:: suspend a running task
+	//r.POST("/suspend", SuspendTask)
 
-	r.POST("/suspend", func(c *gin.Context) {
-		request := &struct {
-			TaskID string `json:"taskId"`
-		}{}
-		err := c.BindJSON(request)
-		if err != nil {
-			c.JSON(http.StatusOK, gin.H{
-				"ok": false,
-				"msg": err,
-			})
-		} else {
-			c.JSON(http.StatusOK, gin.H{
-				"ok": true,
-			})
-		}
-	})
+	//TODO:: resume a running task
+	//r.POST("/resume", ResumeTask)
 
-	r.POST("/cancel", func(c *gin.Context) {
-		request := &struct {
-			TaskID string `json:"taskId"`
-		}{}
-		err := c.BindJSON(request)
-		if err != nil {
-			c.JSON(http.StatusOK, gin.H{
-				"ok": false,
-				"msg": err,
-			})
-		} else {
-			c.JSON(http.StatusOK, gin.H{
-				"ok": true,
-			})
-		}
-	})
-
-	r.POST("/recover", func(c *gin.Context) {
-		request := &struct {
-			TaskID string `json:"taskId"`
-		}{}
-		err := c.BindJSON(request)
-		if err != nil {
-			c.JSON(http.StatusOK, gin.H{
-				"ok": false,
-				"msg": err,
-			})
-		} else {
-			c.JSON(http.StatusOK, gin.H{
-				"ok": true,
-			})
-		}
-	})
-
-
+	//TODO:: recover a running task
+	//r.POST("/recover", RecoverTask)
 
 	_ = r.Run(url)
 }
