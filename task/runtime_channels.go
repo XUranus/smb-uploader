@@ -1,10 +1,15 @@
 package task
 
-var SuspendTaskIDChan	chan string
-var ResumeTaskIDChan	chan string
-var AbortTaskIDChan		chan string
+// global variables
+var (
+	SuspendTaskIDChan	chan string
+	ResumeTaskIDChan	chan string
+	AbortTaskIDChan		chan string
+)
 
 var taskMap map[string]*UploadTask
+
+
 
 func init() {
 	SuspendTaskIDChan = make(chan string)

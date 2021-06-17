@@ -32,11 +32,16 @@ func PostMissionRoutine(lock *sync.WaitGroup, uploadTask *UploadTask) {
 
 	// remove for gui active list, and add for inactive list
 	gui.GetMyMainWindow().Synchronize(func() {
+
 		gui.RemoveActiveTaskPanel(uploadTask.TaskId)
+
 		if uploadTask.Status == UploadStatusSucceed {
 			_, _ = gui.AddSucceedUploadTaskPanel(&uploadTaskRecord)
+			gui.ShowCustomNotify("上传完成", uploadTask.LocalPath)
+
 		} else {
 			_, _ = gui.AddFailedUploadTaskPanel(&uploadTaskRecord)
+			gui.ShowCustomNotify("上传失败",uploadTask.LocalPath )
 		}
 	})
 

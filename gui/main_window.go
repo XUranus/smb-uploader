@@ -5,10 +5,11 @@ import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"log"
+	"uploader/db"
 )
 
-var mmw	*MyMainWindow
 const resourceDir = "img"
+var mmw	*MyMainWindow
 
 type MyMainWindow struct {
 	*walk.MainWindow
@@ -23,6 +24,12 @@ type MyMainWindow struct {
 	SucceedTaskScrollEmpty 	*walk.Composite
 	FailedTaskScrollEmpty  	*walk.Composite
 }
+
+var (
+	AbortTaskIDChan   chan string
+	ResumeTaskIDChan  chan string
+	SuspendTaskIDChan chan string
+)
 
 
 func InitMainWindow() {
@@ -160,22 +167,6 @@ func InitNotifyIcon() {
 		if button != walk.LeftButton {
 			return
 		}
-
-		//if err := ni.ShowCustom(
-		//	"Walk NotifyIcon Example",
-		//	"There are multiple ShowX methods sporting different icons.",
-		//	icon); err != nil {
-		//
-		//	log.Fatal(err)
-		//}
-
-		//_, err := walk.NewLabel(dialog)
-		//if  err != nil {
-		//	fmt.Println(err)
-		//}
-
-		fmt.Println("click icon")
-
 		mmw.MainWindow.Show()
 		_ = mmw.MainWindow.SetFocus()
 	})
@@ -208,37 +199,17 @@ func InitWindow()  {
 }
 
 func InitResourcePath(homePath string) {
-	walk.Resources.SetRootDirPath(homePath)
+	_ = walk.Resources.SetRootDirPath(homePath)
 }
 
-func Refresh() {
-	_ = mmw.MainWindow.SetSize(mmw.Size())
+
+func InitInactiveTasksPanels(succeedTaskList []*db.UploadTaskRecord, failedTaskLists []*db.UploadTaskRecord) {
+	InitSucceedTasksPanels(succeedTaskList)
+	InitFailedTasksPanels(failedTaskLists)
 }
 
-//func LoadCompleted() bool {
-//	if mmw == nil {
-//		return false
-//	}
-//	if mmw.MainWindow == nil {
-//		return false
-//	}
-//	if mmw.NotifyIcon == nil || mmw.FailedTaskScrollView == nil || mmw.SucceedTaskScrollView == nil || mmw.ActiveTaskScrollView == nil {
-//		return false
-//	}
-//	return true
-//}
 
-func GetMyMainWindow() *MyMainWindow {
-	return mmw
-}
-
-var (
-	AbortTaskIDChan   chan string
-	ResumeTaskIDChan  chan string
-	SuspendTaskIDChan chan string
-)
-
-func StartMainWindow(suspendChan chan string, resumeChan chan string, abortChan chan string) {
+func StartMainWindowBlock(suspendChan chan string, resumeChan chan string, abortChan chan string) {
 	SuspendTaskIDChan = suspendChan
 	ResumeTaskIDChan = resumeChan
 	AbortTaskIDChan = abortChan

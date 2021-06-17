@@ -23,11 +23,6 @@ type FileCopyGUIRoutine struct {
 }
 
 
-//if abort := signal.CheckSignal(); abort {
-//log.Println("FileStatisticTask received exit signal, return")
-//return AbortError
-//}
-
 func (routine *FileCopyGUIRoutine) Start(async bool) {
 	if async {
 		go func() {
@@ -37,6 +32,7 @@ func (routine *FileCopyGUIRoutine) Start(async bool) {
 		routine.StartBlock()
 	}
 }
+
 
 func (routine *FileCopyGUIRoutine) StartBlock() {
 	routine.OnStart()

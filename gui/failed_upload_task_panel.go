@@ -16,15 +16,11 @@ type FailedUploadTaskPanel struct {
 	DeleteButton					*walk.PushButton
 }
 
-
-
 func InitFailedTasksPanels(failedTaskList []*db.UploadTaskRecord) {
 	for i:= 0; i < len(failedTaskList); i++ {
 		_, _ = AddFailedUploadTaskPanel(failedTaskList[i])
 	}
 }
-
-
 
 func RemoveFailedTaskPanel(taskId string) {
 	children := mmw.FailedTaskScrollView.Children()
@@ -38,8 +34,6 @@ func RemoveFailedTaskPanel(taskId string) {
 	}
 	CheckScrollViewEmpty(mmw.FailedTaskScrollView, mmw.FailedTaskScrollEmpty)
 }
-
-
 
 
 // Async Function
@@ -124,7 +118,6 @@ func AddFailedUploadTaskPanel(uploadTask *db.UploadTaskRecord) (uploadTaskPanel 
 			},
 		},
 	}.Create(NewBuilder(container))
-
 
 
 	if err != nil {

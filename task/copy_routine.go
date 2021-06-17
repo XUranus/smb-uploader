@@ -42,6 +42,7 @@ func (copyTask *FileCopyTask) Start(async bool) {
 	}
 }
 
+
 func (copyTask *FileCopyTask) BlockStart() {
 	var err error = nil
 
@@ -65,6 +66,7 @@ func (copyTask *FileCopyTask) BlockStart() {
 
 	copyTask.OnExit(err)
 }
+
 
 func (copyTask *FileCopyTask) CopyFolder(source string, dest string) (err error) {
 	sourceInfo, err := os.Stat(source)

@@ -50,7 +50,7 @@ func main() {
 		gui.InitResourcePath(homePath)
 		gui.InitWindow()
 		gui.InitInactiveTasksPanels(succeedTaskList, failedTaskList)
-		gui.Refresh()
+		gui.RefreshMainWindow()
 	} else {
 		gui.PopMessageBox("提示", "端口已被占用")
 		os.Exit(1)
@@ -60,5 +60,5 @@ func main() {
 	server.StartServer(fmt.Sprintf("%v:%v", config.ServerHost, config.ServerPort), true)
 
 	// GUI must run in main thread
-	gui.StartMainWindow(task.SuspendTaskIDChan, task.ResumeTaskIDChan, task.AbortTaskIDChan)
+	gui.StartMainWindowBlock(task.SuspendTaskIDChan, task.ResumeTaskIDChan, task.AbortTaskIDChan)
 }
