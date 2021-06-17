@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"uploader/db"
 	"uploader/gui"
 	"uploader/server"
@@ -14,7 +16,10 @@ import (
 
 func main() {
 
-	serverURL := util.LoadConfig()
+	config, err := util.LoadConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	_ = db.ResolveUnfinishedActiveTasksStatus()
 
@@ -27,11 +32,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gui.InitWindow()
-	gui.InitInactiveTasksPanels(succeedTaskList, failedTaskList)
-	gui.Refresh()
 
-	server.StartServer(serverURL, true)
+	if util.PidOfPortInUse(config.ServerPort) == -1 {
+		gui.InitWindow()
+		gui.InitInactiveTasksPanels(succeedTaskList, failedTaskList)
+		gui.Refresh()
+	} else {
+		gui.PopMessageBox("提示", "端口已被占用")
+		os.Exit(1)
+	}
+
+	server.StartServer(fmt.Sprintf("%v:%v", config.ServerHost, config.ServerPort), true)
 
 	gui.StartMainWindow(task.SuspendTaskIDChan, task.ResumeTaskIDChan, task.AbortTaskIDChan)
 }

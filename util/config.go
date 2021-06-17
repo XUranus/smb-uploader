@@ -4,21 +4,30 @@ import (
 	"fmt"
 	"gopkg.in/ini.v1"
 	"log"
+	"strconv"
 )
 
 
-var configFilePath string = "config.ini"
+var configFilePath = "config.ini"
 
-func LoadConfig() (serverURL string) {
+type ConfigINI struct {
+	ServerHost 		string
+	ServerPort		int
+}
+
+func LoadConfig() (configINI *ConfigINI, err error) {
 	cfg, err := ini.Load(configFilePath)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Fail to read file: %v", err))
+		log.Println(fmt.Sprintf("Fail to read file: %v", err))
+		return nil, err
 	}
 
-	serverHost := cfg.Section("server").Key("host").String()
-	serverPort := cfg.Section("server").Key("port").String()
+	serverPortNumber, err := strconv.Atoi(cfg.Section("server").Key("port").String())
 
-	serverURL = fmt.Sprintf(fmt.Sprintf("%v:%v", serverHost, serverPort))
+	configINI = &ConfigINI{
+		ServerHost: cfg.Section("server").Key("host").String(),
+		ServerPort: serverPortNumber,
+	}
 
-	return serverURL
+	return configINI, err
 }

@@ -23,7 +23,7 @@ go build -ldflags="-H windowsgui"
 ```
 
 ## Getting Start
-run `upload.exe`, then make a `POST` request to `http://127.0.0.1:8888`:
+rename `data.db.example` to `data.db`, run `upload.exe`, then make a `POST` request to `http://127.0.0.1:8888`:
 ```
 {
 	"targetPath": "\\\\192.168.3.5\\Users\\A\\Desktop",
@@ -39,7 +39,7 @@ run `upload.exe`, then make a `POST` request to `http://127.0.0.1:8888`:
  - [x] Resume running task
  - [x] Abort running task
  - [x] Http interface
- - [ ] Single process
+ - [x] Single process
  - [ ] Windows registry script 
  - [ ] Log modules
  - [ ] Recover task from error logs
