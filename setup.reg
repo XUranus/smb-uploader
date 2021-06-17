@@ -1,0 +1,13 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\SMBUPLOADER]
+@="URL:SMBUPLOADER Protocol Handler"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\SMBUPLOADER\shell]
+
+[HKEY_CLASSES_ROOT\SMBUPLOADER\shell\open]
+
+[HKEY_CLASSES_ROOT\SMBUPLOADER\shell\open\command]
+@="\"C:\\Program Files (x86)\\SmbUploader\\uploader.exe\" \"%1\""
+

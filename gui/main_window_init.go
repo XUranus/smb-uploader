@@ -5,10 +5,10 @@ import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"log"
-	"path/filepath"
 )
 
 var mmw	*MyMainWindow
+const resourceDir = "img"
 
 type MyMainWindow struct {
 	*walk.MainWindow
@@ -135,7 +135,7 @@ func InitMainWindow() {
 
 func InitNotifyIcon() {
 	// We load our icon from a file.
-	icon, err := walk.Resources.Icon(filepath.Join("img","upload.ico"))
+	icon, err := walk.Resources.Icon(ImageResourcePath("upload.ico"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -205,6 +205,10 @@ func InitWindow()  {
 	mmw = new(MyMainWindow)
 	InitMainWindow()
 	InitNotifyIcon()
+}
+
+func InitResourcePath(homePath string) {
+	walk.Resources.SetRootDirPath(homePath)
 }
 
 func Refresh() {

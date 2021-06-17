@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"uploader/db"
 	"uploader/gui"
 	"uploader/server"
@@ -15,12 +16,23 @@ import (
 
 
 func main() {
+	// abs home path of /SmbUploader
+	homePath, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 
-	config, err := util.LoadConfig()
+	// load config from .\config.ini
+	config, err := util.LoadConfig(homePath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// invoked by protocol url
+	if len(os.Args) > 2 {
+		_ = util.ExtractAndParseCommandLineArg1(config.Protocol, os.Args[1])
+	}
+
+
+	// resolve and load persisted task from .\data.db
+	db.InitDbPath(homePath)
 	_ = db.ResolveUnfinishedActiveTasksStatus()
 
 	succeedTaskList, err := db.LoadInactiveUploadTasksFromDB(db.Succeed)
@@ -33,7 +45,9 @@ func main() {
 	}
 
 
+	// start GUI
 	if util.PidOfPortInUse(config.ServerPort) == -1 {
+		gui.InitResourcePath(homePath)
 		gui.InitWindow()
 		gui.InitInactiveTasksPanels(succeedTaskList, failedTaskList)
 		gui.Refresh()
@@ -42,7 +56,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// start HTTP server
 	server.StartServer(fmt.Sprintf("%v:%v", config.ServerHost, config.ServerPort), true)
 
+	// GUI must run in main thread
 	gui.StartMainWindow(task.SuspendTaskIDChan, task.ResumeTaskIDChan, task.AbortTaskIDChan)
 }

@@ -4,9 +4,15 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"path"
 )
 
-var dbPath = ".\\data.db"
+const dbName = "data.db"
+var dbPath = dbName
+
+func InitDbPath(homePath string) {
+	dbPath = path.Join(homePath, dbName)
+}
 
 func LoadInactiveUploadTasksFromDB(status UploadTaskRecordStatus) ([]*UploadTaskRecord, error) {
 	db, err := sql.Open("sqlite3", dbPath)

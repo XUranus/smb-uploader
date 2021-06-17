@@ -10,14 +10,14 @@ a local uploader program, used to be invoked by Web to upload big file and folde
  - [x] Abort running task
  - [x] Http interface
 
-## Build
+## Build(X86 32)
 Requires:
  - Windows10
  - Go > 1.6
  - GCCGO
 ```
 windres -o resource.syso resource.rc
-set GOARCH=386 # if x86 arch
+set GOARCH=386
 set CGO_ENABLED=1
 go build -ldflags="-H windowsgui"
 ```
@@ -33,7 +33,7 @@ rename `data.db.example` to `data.db`, run `upload.exe`, then make a `POST` requ
 `targetPath` is your target smb url (or you can test with a local path like `C:\Users\A\Desktop` without smb server)
 
 
-## TODO List
+## TODO
  - [x] GUI support
  - [x] Suspend running task
  - [x] Resume running task
