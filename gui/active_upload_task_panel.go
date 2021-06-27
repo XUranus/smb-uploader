@@ -1,12 +1,11 @@
 package gui
 
 import (
-	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	"log"
 	"os/exec"
 	"syscall"
+	"uploader/logger"
 	"uploader/util"
 )
 
@@ -34,7 +33,6 @@ func RemoveActiveTaskPanel(taskId string) {
 			widget := children.At(i)
 			_ = widget.SetParent(nil)
 			widget.Dispose()
-			fmt.Println(children.Len())
 			break
 		}
 	}
@@ -66,7 +64,6 @@ func AddActiveUploadTaskPanel(taskId string, localPath string, targetPath string
 								Font:     Font{Bold: false, PointSize: 9, Family: "Microsoft YaHei"},
 								Text:     "初始化上传任务中",//`正在将 1 个项目从 <a href="">XXX</a> 复制到 <a href="">XXX</a>`,
 								OnLinkActivated: func(link *walk.LinkLabelLink) {
-									log.Printf("id: '%s', url: '%s'\n", link.Id(), link.URL())
 									cmd := exec.Command("cmd", "/c", "start", link.URL())
 									cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 									_ = cmd.Start()
@@ -113,7 +110,6 @@ func AddActiveUploadTaskPanel(taskId string, localPath string, targetPath string
 								MinSize: Size{Height: 25, Width: 25},
 								MaxSize: Size{Height: 25, Width: 25},
 								OnClicked: func() {
-									log.Println("cancel button pushed")
 									RequestAbortActiveTask(taskId)
 								},
 							},
@@ -168,7 +164,7 @@ func AddActiveUploadTaskPanel(taskId string, localPath string, targetPath string
 
 
 	if err != nil {
-		log.Println(err)
+		logger.CommonLogger.Error("AddActiveUploadTaskPanel", err)
 	} else {
 		mmw.ActiveTaskScrollEmpty.SetVisible(false)
 	}
@@ -206,7 +202,6 @@ func RequestAbortActiveTask(taskId string) {
 						Text: "确定",
 						Font: Font{Bold: false, PointSize: 8, Family: "Microsoft YaHei"},
 						OnClicked: func() {
-							//walk.MsgBox(dialog, "提示", "暂不支持取消任务", walk.MsgBoxIconInformation)
 							AbortTaskIDChan <- taskId
 							dialog.Close(0)
 						},

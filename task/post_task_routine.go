@@ -2,11 +2,12 @@ package task
 
 import (
 	"errors"
-	"log"
+	"fmt"
 	"sync"
 	"time"
 	"uploader/db"
 	"uploader/gui"
+	"uploader/logger"
 )
 
 /**
@@ -15,7 +16,7 @@ import (
 func PostMissionRoutine(lock *sync.WaitGroup, uploadTask *UploadTask) {
 	lock.Wait()
 
-	log.Println("uploadTask, enter PostMissionRoutine: ", uploadTask)
+	logger.CommonLogger.Info("PostMissionRoutine", fmt.Sprintf("uploadTask, enter PostMissionRoutine: %v", uploadTask))
 
 	if uploadTask.Status != UploadStatusFailed {
 		uploadTask.Status = UploadStatusSucceed
@@ -27,7 +28,7 @@ func PostMissionRoutine(lock *sync.WaitGroup, uploadTask *UploadTask) {
 	}
 
 	// sync to db
-	uploadTaskRecord := UploadTaskToUploadTaskRecord(uploadTask)
+	uploadTaskRecord := CovertUploadTaskToUploadTaskRecord(uploadTask)
 	_ = db.UpdateTaskRecord(uploadTaskRecord)
 
 	// remove for gui active list, and add for inactive list

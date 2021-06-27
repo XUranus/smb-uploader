@@ -2,7 +2,7 @@ package task
 
 import (
 	"errors"
-	"log"
+	"uploader/logger"
 )
 
 
@@ -42,12 +42,12 @@ func (routine *RoutineSignal) CheckSignal() (abort bool){
 		case _ = <- routine.ResumeChan:  // cancel block
 			return false
 		case _ = <- routine.SuspendChan:
-			log.Println("process has been suspended, drop suspend signal")
+			logger.CommonLogger.Info("CheckSignal", "process has been suspended, drop suspend signal")
 		case _ = <- routine.AbortChan:
 			return true
 		}
 	case _ = <- routine.ResumeChan:
-		log.Println("process has not been suspended, drop resume signal")
+		logger.CommonLogger.Info("CheckSignal", "process has not been suspended, drop resume signal")
 	case _ = <- routine.AbortChan:
 		return true
 	default:

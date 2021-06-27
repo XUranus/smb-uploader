@@ -12,7 +12,14 @@ const (
 	Failed      UploadTaskRecordStatus = "FAILED"
 )
 
+/*
+	UploadTaskRecord is a static task data stored in data.db
 
+						====>
+	UploadTaskRecord		  			UploadTask
+						<====
+
+ */
 type UploadTaskRecord struct {
 	// Unique Identifier
 	TaskId				string

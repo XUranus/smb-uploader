@@ -34,5 +34,6 @@ func SelectedPath(isDir bool, fileFilter string) (path string, ok bool, err erro
 		return dlg.FilePath, true, nil
 	}
 
-	//dlg.FilePath = initialDirPath // TODO::RestorePath not support in walk yet, temporally meaning less
+	//dlg.FilePath = initialDirPath
+	//TODO::RestorePath not support in go-walk yet, temporally meaningless
 }

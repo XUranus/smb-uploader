@@ -3,9 +3,9 @@ package util
 import (
 	"fmt"
 	"gopkg.in/ini.v1"
-	"log"
 	"path"
 	"strconv"
+	"uploader/logger"
 )
 
 
@@ -20,7 +20,7 @@ type ConfigINI struct {
 func LoadConfig(homePath string) (configINI *ConfigINI, err error) {
 	cfg, err := ini.Load(path.Join(homePath, configFileName))
 	if err != nil {
-		log.Println(fmt.Sprintf("Fail to read file: %v", err))
+		logger.CommonLogger.Error("LoadConfig", fmt.Sprintf("fail to read file, %v", err))
 		return nil, err
 	}
 

@@ -1,11 +1,10 @@
 package gui
 
 import (
-	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	"log"
 	"uploader/db"
+	"uploader/logger"
 )
 
 const resourceDir = "img"
@@ -130,7 +129,7 @@ func InitMainWindow() {
 		},
 	}.Create()
 	if err != nil {
-		fmt.Println(err)
+		logger.CommonLogger.Error("InitMainWindow", err)
 	}
 
 	// prevent from exit
@@ -144,22 +143,22 @@ func InitNotifyIcon() {
 	// We load our icon from a file.
 	icon, err := walk.Resources.Icon(ImageResourcePath("upload.ico"))
 	if err != nil {
-		log.Fatal(err)
+		logger.CommonLogger.Error("InitNotifyIcon", err)
 	}
 
 	// Create the notify icon and make sure we clean it up on exit.
 	mmw.NotifyIcon, err = walk.NewNotifyIcon(mmw.MainWindow)
 	if err != nil {
-		log.Fatal(err)
+		logger.CommonLogger.Error("InitNotifyIcon", err)
 	}
 	//defer ni.Dispose()
 
 	// Set the icon and a tool tip text.
 	if err := mmw.NotifyIcon.SetIcon(icon); err != nil {
-		log.Fatal(err)
+		logger.CommonLogger.Error("InitNotifyIcon", err)
 	}
 	if err := mmw.NotifyIcon.SetToolTip("本地上传器"); err != nil {
-		log.Fatal(err)
+		logger.CommonLogger.Error("InitNotifyIcon", err)
 	}
 
 	// When the left mouse button is pressed, bring up our balloon.
@@ -171,24 +170,37 @@ func InitNotifyIcon() {
 		_ = mmw.MainWindow.SetFocus()
 	})
 
-	// We put an exit action into the context menu.
+	// put an exit action into the context menu.
 	exitAction := walk.NewAction()
 	if err := exitAction.SetText("退出"); err != nil {
-		log.Fatal(err)
+		logger.CommonLogger.Error("InitNotifyIcon", err)
 	}
 	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
 	if err := mmw.NotifyIcon.ContextMenu().Actions().Add(exitAction); err != nil {
-		log.Fatal(err)
+		logger.CommonLogger.Error("InitNotifyIcon", err)
 	}
+
+	// put an about action into the context menu.
+	aboutAction := walk.NewAction()
+	if err := aboutAction.SetText("关于"); err != nil {
+		logger.CommonLogger.Error("InitNotifyIcon", err)
+	}
+	aboutAction.Triggered().Attach(func() {
+		PopMessageBox("关于", "SMB本地上传器 https://github.com/XUranus/smb-uploader")
+	})
+	if err := mmw.NotifyIcon.ContextMenu().Actions().Add(aboutAction); err != nil {
+		logger.CommonLogger.Error("InitNotifyIcon", err)
+	}
+
 
 	// The notify icon is hidden initially, so we have to make it visible.
 	if err := mmw.NotifyIcon.SetVisible(true); err != nil {
-		log.Fatal(err)
+		logger.CommonLogger.Error("InitNotifyIcon", err)
 	}
 
 	// Now that the icon is visible, we can bring up an info balloon.
 	if err := mmw.NotifyIcon.ShowInfo("本地上传器已启动", "点击查看所有任务列表"); err != nil {
-		log.Fatal(err)
+		logger.CommonLogger.Error("InitNotifyIcon", err)
 	}
 }
 

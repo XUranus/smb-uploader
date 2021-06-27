@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	"log"
 	"time"
 	"uploader/db"
+	"uploader/logger"
 	"uploader/util"
 )
 
@@ -30,7 +30,6 @@ func RemoveSucceedTaskPanel(taskId string) {
 			widget := children.At(i)
 			_ = widget.SetParent(nil)
 			widget.Dispose()
-			fmt.Println(children.Len())
 			break
 		}
 	}
@@ -130,7 +129,7 @@ func AddSucceedUploadTaskPanel(uploadTask *db.UploadTaskRecord) (uploadTaskPanel
 	}.Create(NewBuilder(container))
 
 	if err != nil {
-		log.Println(err)
+		logger.CommonLogger.Error("AddSucceedUploadTaskPanel", err)
 	} else {
 		mmw.SucceedTaskScrollEmpty.SetVisible(false)
 	}

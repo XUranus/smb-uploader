@@ -2,7 +2,7 @@ package task
 
 import "uploader/db"
 
-func UploadTaskToUploadTaskRecord(uploadTask *UploadTask) db.UploadTaskRecord {
+func CovertUploadTaskToUploadTaskRecord(uploadTask *UploadTask) db.UploadTaskRecord {
 	status := db.Active
 	if uploadTask.Status == UploadStatusFailed {
 		status = db.Failed

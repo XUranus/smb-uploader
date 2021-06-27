@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	"log"
 	"time"
 	"uploader/db"
+	"uploader/logger"
 	"uploader/util"
 )
 
@@ -121,7 +121,7 @@ func AddFailedUploadTaskPanel(uploadTask *db.UploadTaskRecord) (uploadTaskPanel 
 
 
 	if err != nil {
-		log.Println(err)
+		logger.CommonLogger.Error("AddFailedUploadTaskPanel", err)
 	} else {
 		mmw.FailedTaskScrollEmpty.SetVisible(false)
 	}

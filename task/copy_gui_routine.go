@@ -2,9 +2,9 @@ package task
 
 import (
 	"fmt"
-	"log"
 	"path/filepath"
 	"time"
+	"uploader/logger"
 	"uploader/util"
 )
 
@@ -36,7 +36,7 @@ func (routine *FileCopyGUIRoutine) Start(async bool) {
 
 func (routine *FileCopyGUIRoutine) StartBlock() {
 	routine.OnStart()
-	log.Println("FileCopyGUIRoutine start")
+	logger.CommonLogger.Info("StartBlock", "FileCopyGUIRoutine start")
 
 	var err error = nil
 	secondSlot := int64(1)
@@ -51,13 +51,13 @@ func (routine *FileCopyGUIRoutine) StartBlock() {
 	_ = panel.ProgressBar.SetMarqueeMode(false)
 	panel.ContinueOrSuspendButton.SetVisible(true)
 	_ = panel.SrcAndTargetLinkLabel.SetText(fmt.Sprintf(`正在将 %v 个项目从 <a href="%v">%v</a> 复制到 <a href="%v">%v</a>`,
-		routine.UploadTaskRef.ItemsTotal,  util.DirPath(routine.UploadTaskRef.LocalPath), util.DirName(routine.UploadTaskRef.LocalPath),
+		util.NumberWithComma(routine.UploadTaskRef.ItemsTotal),  util.DirPath(routine.UploadTaskRef.LocalPath), util.DirName(routine.UploadTaskRef.LocalPath),
 		util.DirPath(routine.UploadTaskRef.TargetPath), util.DirName(routine.UploadTaskRef.TargetPath)))
 
 	for {
 
 		if abort := routine.Signal.CheckSignal(); abort {
-			log.Println("FileCopyGUIRoutine received exit signal, return")
+			logger.CommonLogger.Info("StartBlock", "FileCopyGUIRoutine received exit signal, return")
 			err = AbortError
 			return
 		}
@@ -72,7 +72,6 @@ func (routine *FileCopyGUIRoutine) StartBlock() {
 			percent = 100
 		}
 
-		fmt.Println(int64(GUIRefreshSlot.Seconds()))
 		secPassed += int64(GUIRefreshSlot.Seconds())
 		bytesSpeed := uploadTask.BytesCopied / secPassed
 		speed := util.FileSizeFromBytes(bytesSpeed)
@@ -88,7 +87,7 @@ func (routine *FileCopyGUIRoutine) StartBlock() {
 			_ = panel.StatusTextLabel.SetText(fmt.Sprintf("正在上传 - %v%%", percent))
 			panel.ProgressBar.SetValue(percent)
 			_ = panel.SpeedTextLabel.SetText(fmt.Sprintf("当前速度: %v/s", speed))
-			_ = panel.ItemLeftTextLabel.SetText(fmt.Sprintf("剩余项目: %v(%v)", itemsLeft, util.FileSizeFromBytes(bytesLeft)))
+			_ = panel.ItemLeftTextLabel.SetText(fmt.Sprintf("剩余项目: %v(%v)", util.NumberWithComma(itemsLeft), util.FileSizeFromBytes(bytesLeft)))
 			_ = panel.CurrentCopyNameTextLabel.SetText(fmt.Sprintf("正在上传: %v", util.StringOmit(filepath.Base(uploadTask.CurrentCopyItemPath),20)))
 			_ = panel.TimeLeftTextLabel.SetText(fmt.Sprintf("剩余时间: %v", util.SecondToTime(secLeft)))
 		})

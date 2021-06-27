@@ -2,9 +2,9 @@ package task
 
 import (
 	"fmt"
-	"log"
 	"time"
 	"uploader/gui"
+	"uploader/logger"
 	"uploader/util"
 )
 
@@ -37,7 +37,7 @@ func (routine *FileStatisticGUIRoutine) Start(async bool) {
 }
 
 func (routine *FileStatisticGUIRoutine) StartBlock() {
-	log.Println("FileStatisticGUIRoutine Start")
+	logger.CommonLogger.Info("StartBlock", "FileStatisticGUIRoutine Start")
 	GUIRefreshSlot := time.Second * 1
 	var err error = nil
 
@@ -46,15 +46,15 @@ func (routine *FileStatisticGUIRoutine) StartBlock() {
 	for {
 
 		if abort := routine.Signal.CheckSignal(); abort {
-			log.Println("FileStatisticGUIRoutine received exit signal, return")
+			logger.CommonLogger.Info("StartBlock", "FileStatisticGUIRoutine received exit signal, return")
 			err = AbortError
 			return
 		}
 
 		routine.Panel.GroupBox.Synchronize(func() {
-			_ = routine.Panel.StatusTextLabel.SetText(fmt.Sprintf("已发现 %v 个项目(%v)", routine.StatisticTask.ItemsFound, util.FileSizeFromBytes(routine.StatisticTask.BytesCount)))
+			_ = routine.Panel.StatusTextLabel.SetText(fmt.Sprintf("已发现 %v 个项目(%v)", util.NumberWithComma(routine.StatisticTask.ItemsFound), util.FileSizeFromBytes(routine.StatisticTask.BytesCount)))
 			_ = routine.Panel.SrcAndTargetLinkLabel.SetText(fmt.Sprintf(`正在将 %v 个项目从 <a href="%v">%v</a> 复制到 <a href="%v">%v</a>`,
-				routine.StatisticTask.ItemsFound,  util.DirPath(routine.LocalPath), util.DirName(routine.LocalPath),
+				util.NumberWithComma(routine.StatisticTask.ItemsFound),  util.DirPath(routine.LocalPath), util.DirName(routine.LocalPath),
 				util.DirPath(routine.TargetPath), util.DirName(routine.TargetPath)))
 		})
 

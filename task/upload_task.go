@@ -2,10 +2,10 @@ package task
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"time"
 	"uploader/gui"
+	"uploader/logger"
 )
 
 type UploadStatus int32
@@ -139,7 +139,7 @@ func (uploadTask *UploadTask) Start() {
 			}
 
 			fileStatisticGUIRoutineSignal.SendAbortSignal()
-			log.Println("statisticTask Lock Release")
+			logger.CommonLogger.Info("Start", "statisticTask Lock Release")
 			activeLock.Done()
 		},
 	}
@@ -175,7 +175,7 @@ func (uploadTask *UploadTask) Start() {
 			}
 
 			fileCopyGUIRoutineSignal.SendAbortSignal()
-			log.Println("fileCopyTask Lock Release")
+			logger.CommonLogger.Info("Start", "fileCopyTask Lock Release")
 			activeLock.Done()
 		},
 	}
@@ -190,7 +190,7 @@ func (uploadTask *UploadTask) Start() {
 		Panel: panel,
 		OnExit: func(err error) {
 			guiSeqLock.Done()
-			log.Println("fileStatisticGUIRoutine Lock Release")
+			logger.CommonLogger.Info("Start", "fileStatisticGUIRoutine Lock Release")
 			activeLock.Done()
 		},
 	}
@@ -205,7 +205,7 @@ func (uploadTask *UploadTask) Start() {
 			guiSeqLock.Wait()
 		},
 		OnExit:	func(err error) {
-			log.Println("fileCopyGUIRoutine Lock Release")
+			logger.CommonLogger.Info("Start", "fileCopyGUIRoutine Lock Release")
 			activeLock.Done()
 		},
 	}
@@ -232,7 +232,7 @@ func (uploadTask *UploadTask) Start() {
 
 func (uploadTask *UploadTask) Suspend() {
 	if uploadTask.Status != UploadStatusRunning {
-		log.Println("suspend requires running state, current ", uploadTask.Status)
+		logger.CommonLogger.Info("Suspend", fmt.Sprintf("suspend requires running state, current %v", uploadTask.Status))
 		return
 	} else {
 		uploadTask.FileCopyTaskSignal.SendSuspendSignal()       // for copy routine
@@ -250,7 +250,7 @@ func (uploadTask *UploadTask) Suspend() {
 
 func (uploadTask *UploadTask) Resume() {
 	if uploadTask.Status != UploadStatusSuspend {
-		log.Println("suspend requires suspend state, current ", uploadTask.Status)
+		logger.CommonLogger.Info("Resume", fmt.Sprintf("suspend requires suspend state, current %v", uploadTask.Status))
 		return
 	} else {
 		uploadTask.FileCopyTaskSignal.SendResumeSignal()       // for copy routine
@@ -265,7 +265,7 @@ func (uploadTask *UploadTask) Resume() {
 }
 
 func (uploadTask *UploadTask) Abort() {
-	log.Println("current status ", uploadTask.Status)
+	logger.CommonLogger.Info("Abort", fmt.Sprintf("current status %v", uploadTask.Status))
 
 	if uploadTask.Status == UploadStatusPending {
 		uploadTask.FileCopyTaskSignal.SendAbortSignal() // for statistic routine

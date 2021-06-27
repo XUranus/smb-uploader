@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"uploader/logger"
 )
 
 func PidOfPortInUse(portNumber int) int {
@@ -17,7 +18,10 @@ func PidOfPortInUse(portNumber int) int {
 	cmd := exec.Command("cmd", "/c", cmdStr)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	cmd.Stdout = &outBytes
-	cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		logger.CommonLogger.Error("PidOfPortInUse", err)
+	}
 	resStr := outBytes.String()
 	r := regexp.MustCompile(`\s\d+\s`).FindAllString(resStr, -1)
 	if len(r) > 0 {

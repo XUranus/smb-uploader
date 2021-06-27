@@ -2,13 +2,14 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
 	"uploader/db"
 	"uploader/gui"
+	"uploader/logger"
 	"uploader/task"
+	"uploader/util"
 )
 
 func NewTask(c *gin.Context) {
@@ -22,18 +23,27 @@ func NewTask(c *gin.Context) {
 	} else {
 		localPath, ok, err := gui.SelectedPath(request.IsDir, request.FileFilter)
 		if err != nil {
-			log.Fatal(err)
+			logger.CommonLogger.Error("NewTask", err)
 		} else {
 			if ok {
 				if request.TaskID == "" {
 					request.TaskID = strconv.FormatInt(time.Now().Unix(), 10)
 				}
-				t := task.NewUploadTask(request.TaskID, localPath, request.TargetPath, request.IsDir)
-				_ = db.CreateTaskRecord(task.UploadTaskToUploadTaskRecord(t))
-				t.Start()
+				if ok, err := util.CheckSMBTargetAvailability(request.TargetPath); ok {
+					// samba target available
+					t := task.NewUploadTask(request.TaskID, localPath, request.TargetPath, request.IsDir)
+					err = db.CreateTaskRecord(task.CovertUploadTaskToUploadTaskRecord(t))
+					if err != nil {
+						logger.CommonLogger.Error("NewTask", err)
+					}
+					t.Start()
 
+				} else {
+					// invalid samba path
+					logger.CommonLogger.Error("NewTask", err)
+				}
 			} else {
-				log.Println("file selection canceled")
+				logger.CommonLogger.Info("NewTask", "file selection canceled")
 			}
 		}
 
@@ -49,6 +59,9 @@ func AbortTask(c *gin.Context) {
 		TaskID string `json:"taskId"`
 	}{}
 	err := c.BindJSON(request)
+	if err != nil {
+		logger.CommonLogger.Error("AbortTask", err)
+	}
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"ok": false,

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"uploader/db"
 	"uploader/gui"
+	"uploader/logger"
 	"uploader/server"
 	"uploader/task"
 	"uploader/util"
@@ -19,6 +20,9 @@ func main() {
 	// abs home path of /SmbUploader
 	homePath, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 
+	// init logger module
+	_, _ = logger.GetCommonLogger("upload.log")
+
 	// load config from .\config.ini
 	config, err := util.LoadConfig(homePath)
 	if err != nil {
@@ -27,7 +31,7 @@ func main() {
 
 	// invoked by protocol url
 	if len(os.Args) > 2 {
-		_ = util.ExtractAndParseCommandLineArg1(config.Protocol, os.Args[1])
+		util.ExtractAndParseCommandLineArg1(config.Protocol, os.Args[1])
 	}
 
 

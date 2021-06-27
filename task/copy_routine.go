@@ -2,9 +2,9 @@ package task
 
 import (
 	"errors"
-	"log"
 	"os"
 	"path/filepath"
+	"uploader/logger"
 )
 
 /**
@@ -191,7 +191,7 @@ func (copyTask *FileCopyTask) copyBuffer(dst Writer, src Reader) (written int64,
 	for {
 
 		if abort := copyTask.Signal.CheckSignal(); abort {
-			log.Println("FileCopyTask received exit signal, return")
+			logger.CommonLogger.Info("copyBuffer", "FileCopyTask received exit signal, return")
 			return 0, AbortError
 		}
 

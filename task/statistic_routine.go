@@ -1,9 +1,9 @@
 package task
 
 import (
-	"log"
 	"os"
 	"path/filepath"
+	"uploader/logger"
 )
 
 /**
@@ -67,7 +67,7 @@ func (statisticTask *FileStatisticTask) CalDirSize(path string) (int64, error) {
 	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
 
 		if abort := signal.CheckSignal(); abort {
-			log.Println("FileStatisticTask received exit signal, return")
+			logger.CommonLogger.Info("CalDirSize", "FileStatisticTask received exit signal, return")
 			return AbortError
 		}
 

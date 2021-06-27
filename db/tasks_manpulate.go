@@ -2,9 +2,9 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"path"
+	"uploader/logger"
 )
 
 const dbName = "data.db"
@@ -109,7 +109,7 @@ func CreateTaskRecord(record UploadTaskRecord) error {
 		record.BytesCopied, Bool2Int(record.BytesCalculated), record.BytesTotal,
 		record.ItemsCopied, Bool2Int(record.ItemsCalculated), record.ItemsTotal,
 		record.StartTime, record.FinishTime, record.ErrorMessage, 0); err != nil {
-		fmt.Println(err)
+		logger.CommonLogger.Error("CreateTaskRecord", err)
 		return err
 	}
 	return nil
@@ -137,7 +137,9 @@ func UpdateTaskRecord(record UploadTaskRecord) error {
 	return nil
 }
 
-// set all active task to failed
+/**
+	set all active task to be failed
+ */
 func ResolveUnfinishedActiveTasksStatus() error {
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
@@ -146,7 +148,7 @@ func ResolveUnfinishedActiveTasksStatus() error {
 	defer db.Close()
 
 	if _, err := db.Exec("UPDATE upload SET status = ?, error_msg = ? WHERE status = ?", Failed, "已取消", Active); err != nil {
-		fmt.Println(err)
+		logger.CommonLogger.Error("ResolveUnfinishedActiveTasksStatus", err)
 		return err
 	}
 	return nil
