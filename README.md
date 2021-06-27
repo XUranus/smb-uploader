@@ -46,5 +46,7 @@ visit `smbuploader://` in browser, or directly run `C:\Programs Files(X86)\uploa
  - [x] Http interface
  - [x] Single process
  - [x] Windows registry script 
- - [ ] Log modules
+ - [x] Log modules
  - [ ] Recover task from error logs
+
+![](smb.png)
